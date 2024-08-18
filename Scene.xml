@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<scene>
+	<camera>
+		<pos x="0" y="0" z="1.8"/>
+		<dir x="1" y="0" z="-0.1"/>
+	</camera>
+
+	<point_light>
+		<pos x="0" y="0" z="2.5"/>
+		<color r="1" g="1" b="1"/>
+		<intensity i="10"/>
+	</point_light>
+
+	<ambiant_light>
+		<color r="0.8" g="0.8" b="1"/>
+		<intensity i="2"/>
+	</ambiant_light>
+
+	<sphere>
+		<pos x="0" y="0" z="1.8"/>
+		<radius r="0.5"/>
+		<material>
+			<color r="0" g="0.5" b="0"/>
+			<specular r="1" g="1" b="1"/>
+			<reflectivity r="0.5"/>
+		</material>
+	</sphere>
+	<object>
+		<face>
+			<pos x="-10" y="-10" z="0"/>
+			<pos x="-10" y=" 10" z="0"/>
+			<pos x=" 10" y=" 10" z="0"/>
+		</face>
+		<face>
+			<pos x=" 10" y="-10" z="0"/>
+			<pos x=" 10" y=" 10" z="0"/>
+			<pos x="-10" y=" 10" z="0"/>
+		</face>
+		<material>
+			<color r="1" g="1" b="0.8"/>
+			<specular r="1" g="1" b="1"/>
+			<reflectivity r="0.3"/>
+		</material>
+	</object>
+</scene>
