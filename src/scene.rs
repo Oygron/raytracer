@@ -1,6 +1,6 @@
 use quick_xml::reader::Reader;
 use quick_xml::events::{Event, BytesStart};
-use quick_xml::events::attributes::{Attributes, Attribute, AttrError};
+use quick_xml::events::attributes::{Attribute, AttrError};
 use quick_xml::name::QName;
 use std::env;
 use std::fs;
@@ -11,7 +11,8 @@ mod light;
 mod object;
 
 use camera::Camera;
-use crate::coord::{Point, Vector};
+use crate::coord::Vec3d;
+use object::material::Color;
 //use light::Light;
 //use object::Object;
 
@@ -27,6 +28,10 @@ impl Scene {
             .expect(&format!("file {} cannot be read (path {})",
                 &filename, 
                 env::current_dir().unwrap().display()));
+        Self::load_from_xml_string(file_content)
+    }
+
+    fn load_from_xml_string(file_content: String) -> Scene {
         let mut reader = Reader::from_str(&file_content);
         reader.config_mut().trim_text(true);
 
@@ -64,7 +69,7 @@ impl Scene {
         String::from_utf8_lossy(a.unwrap().value.as_ref()).parse::<f64>().unwrap()
     }
 
-    fn read_point(e: BytesStart) -> Point{
+    fn read_vec3d(e: BytesStart) -> Vec3d{
         let mut x = 0.0;
         let mut y = 0.0;
         let mut z = 0.0;
@@ -78,37 +83,37 @@ impl Scene {
             }
 
         }
-        Point{x, y, z}
+        Vec3d{x, y, z}
     }
-    fn read_vect(e: BytesStart) -> Vector{
-        let mut x = 0.0;
-        let mut y = 0.0;
-        let mut z = 0.0;
+    fn read_color(e: BytesStart) -> Color{
+        let mut r = 0.0;
+        let mut g = 0.0;
+        let mut b = 0.0;
         for a in e.attributes(){
             let a_cloned = a.clone();
             match a.unwrap().key {
-                QName(b"x") => x = Self::read_value_as_f64(a_cloned),
-                QName(b"y") => y = Self::read_value_as_f64(a_cloned),
-                QName(b"z") => z = Self::read_value_as_f64(a_cloned),
+                QName(b"r") => r = Self::read_value_as_f64(a_cloned),
+                QName(b"g") => g = Self::read_value_as_f64(a_cloned),
+                QName(b"b") => b = Self::read_value_as_f64(a_cloned),
                 _ => (),
             }
 
         }
-        Vector{x, y, z}
+        Color{r, g, b}
     }
 
     fn read_camera(reader: &mut Reader<&[u8]>) -> Camera {
         let mut buf = Vec::new();
-        let mut pos: Option<Point> = None;
-        let mut dir: Option<Vector> = None;
+        let mut pos: Option<Vec3d> = None;
+        let mut dir: Option<Vec3d> = None;
         loop {
             match reader.read_event_into(&mut buf) {
                 Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
                 Ok(Event::Eof) => panic!("Unexpected EOF"),
                 Ok(Event::Empty(e)) => {
                     match e.name().as_ref() {
-                        b"pos" => pos = Some(Self::read_point(e)),
-                        b"dir" => dir = Some(Self::read_vect(e)),
+                        b"pos" => pos = Some(Self::read_vec3d(e)),
+                        b"dir" => dir = Some(Self::read_vec3d(e)),
                         _ => (),
                     }
                 },
@@ -125,6 +130,9 @@ impl Scene {
         }
         Camera::new(pos.unwrap(), dir.unwrap())
     }
+
+
+
 
     pub fn render(&self) {
 

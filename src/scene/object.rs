@@ -1,3 +1,3 @@
-mod sphere;
-mod material;
-mod rasterized;
+pub mod sphere;
+pub mod material;
+pub mod rasterized;
