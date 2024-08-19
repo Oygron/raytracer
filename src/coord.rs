@@ -1,10 +1,10 @@
 use std::ops;
 
 extern crate approx;
-use approx::{RelativeEq, AbsDiffEq, assert_relative_eq};
+use approx::{RelativeEq, AbsDiffEq};
 use std::f64;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Vec3d {
     pub x:f64,
     pub y:f64,
@@ -18,7 +18,7 @@ impl Vec3d {
     pub fn norm(&self) -> f64 {
         (self.x*self.x + self.y*self.y + self.z*self.z).sqrt()
     }
-    pub fn normalized(&self) -> Option<Self> {
+    pub fn normalize(&self) -> Option<Self> {
         match self.norm() {
             0. => None,
             x => Some(self/x)
@@ -27,6 +27,13 @@ impl Vec3d {
     }
     pub fn dot(&self, other: &Vec3d) -> f64{
         self.x*other.x + self.y*other.y + self.z*other.z
+    }
+    pub fn cross(&self, other: &Vec3d) -> Vec3d{
+        Vec3d{
+            x: self.y*other.z - other.y*self.z,
+            y: self.z*other.x - other.z*self.x,
+            z: self.x*other.y - other.x*self.y,
+        }
     }
 }
 
@@ -100,6 +107,7 @@ impl RelativeEq for Vec3d {
 mod tests {
 
     use super::*;
+    use approx::assert_relative_eq;
 
     #[test]
     fn access_vec_coord() {
@@ -151,7 +159,7 @@ mod tests {
     #[test]
     fn normalized_vec(){
         let vec = Vec3d{x:1., y:2., z:3.};
-        assert_relative_eq!(vec.normalized().unwrap(), Vec3d{x: 0.2672612419124244, 
+        assert_relative_eq!(vec.normalize().unwrap(), Vec3d{x: 0.2672612419124244, 
                                                              y: 0.5345224838248488, 
                                                              z: 0.8017837257372732});
     }
@@ -159,7 +167,7 @@ mod tests {
     #[test]
     fn normalized_null_vec(){
         let vec = Vec3d{x:0., y:0., z:0.};
-        assert_eq!(vec.normalized(), None);
+        assert_eq!(vec.normalize(), None);
     }
 
     #[test]
@@ -174,5 +182,12 @@ mod tests {
         let vec1 = Vec3d{x:1., y:0., z:0.};
         let vec2 = Vec3d{x:0., y:1., z:0.};
         assert_eq!(vec1.dot(&vec2), 0.);
+    }
+
+    #[test]
+    fn cross_ortho() {
+        let vec1 = Vec3d{x:1., y:0., z:0.};
+        let vec2 = Vec3d{x:0., y:1., z:0.};
+        assert_eq!(vec1.cross(&vec2), Vec3d{x:0., y:0., z:1.});
     }
 }

@@ -5,10 +5,10 @@ use crate::scene::camera::Ray;
 
 
 
-struct Sphere{
-    center: Vec3d,
-    radius: f64,
-    material: Material,
+pub struct Sphere{
+    pub center: Vec3d,
+    pub radius: f64,
+    pub material: Material,
 }
 
 impl Sphere {
@@ -151,7 +151,7 @@ mod tests {
                                          3.0,
                                          Material::default());
         let ray = Ray{start: Vec3d{ x: 2., y: 3., z: 4. },
-                           dir  : Vec3d{ x: 1., y: 0.2, z: -0.3 }.normalized().unwrap()};
+                           dir  : Vec3d{ x: 1., y: 0.2, z: -0.3 }.normalize().unwrap()};
 
         let (dist, pos) = sphere.intersect(&ray).unwrap();
         assert_relative_eq!(dist, 3.410205739962394);
