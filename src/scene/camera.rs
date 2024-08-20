@@ -1,4 +1,5 @@
 use std::f64::consts::PI;
+extern crate approx;
 
 use crate::coord::Vec3d;
 
@@ -23,12 +24,12 @@ impl Camera {
         let fov = fov.unwrap_or_else(|| 90.);
         
         //Vecteur orthogonal = up - (projection de up sur dir), 
-        let up = (&up - &(up.dot(dir) * &dir)).normalize().unwrap();
+        let up = (up - (up.dot(dir) * dir)).normalize().unwrap();
         let right = dir.cross(up);
 
         let delta = (fov * PI / 180.)/resolution.0 as f64;
-        let px_down = &up * -delta;
-        let px_left = &right * -delta;
+        let px_down = up * -delta;
+        let px_left = right * -delta;
         
         Camera{
             pos, 
@@ -43,7 +44,7 @@ impl Camera {
         let dx = (px.0 as f64) - (self.resolution.0 as f64)/2.0;
         let dy = (px.1 as f64) - (self.resolution.1 as f64)/2.0;
 
-        let px_window = &(&self.dir + &(dy * &self.px_down)) + &(dx * &self.px_left);
+        let px_window = self.dir + (dy * self.px_down) + (dx * self.px_left);
 
         Ray{start: self.pos.clone(), dir: px_window.normalize().unwrap()}
     }
@@ -53,5 +54,45 @@ impl Camera {
     }
     pub fn height(&self) -> u32 {
         self.resolution.1
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use approx::assert_abs_diff_eq;
+
+    #[test]
+    fn create_default_camera() {
+        let pos = Vec3d{x:1., y:2., z:3.};
+        let dir = Vec3d{x:5., y:0.3, z:-1.};
+        let cam = Camera::new(pos, dir, None, None, None);
+        assert_eq!(cam.pos, pos);
+        assert_abs_diff_eq!(cam.dir, dir.normalize().unwrap());
+        assert_eq!(cam.width(), 1024);
+        assert_eq!(cam.height(), 768);
+
+        assert_abs_diff_eq!(cam.dir.dot(cam.px_down), 0.);
+        assert_abs_diff_eq!(cam.dir.dot(cam.px_left), 0.);
+        assert_abs_diff_eq!(cam.px_left.dot(cam.px_down), 0.);
+        assert_abs_diff_eq!(cam.px_down, Vec3d{x:-0.0002997799304577759,
+                                               y: -1.7986795827466556e-5, 
+                                               z: -0.0015042956910371193});
+        assert_abs_diff_eq!(cam.px_left, Vec3d{x: -9.187362331913159e-5, 
+                                               y: 0.00153122705531886, 
+                                               z: -2.6610324844426207e-21});
+    }
+
+    #[test]
+    fn create_ray(){
+        let pos = Vec3d{x:1., y:2., z:3.};
+        let dir = Vec3d{x:5., y:0.3, z:-1.};
+        let cam = Camera::new(pos, dir, None, None, None);
+        let ray = cam.ray((40, 60));
+        assert_abs_diff_eq!(ray.dir, Vec3d{x: 0.8410810520952884, 
+                                           y: -0.49454226181177513, 
+                                           z: 0.2191132471768342});
+        assert_eq!(ray.start, pos);
     }
 }

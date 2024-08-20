@@ -1,7 +1,7 @@
 use std::ops;
 
 extern crate approx;
-use approx::{RelativeEq, AbsDiffEq};
+use approx::AbsDiffEq;
 use std::f64;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -22,7 +22,7 @@ impl Vec3d {
     pub fn normalize(&self) -> Option<Self> {
         match self.norm() {
             0. => None,
-            x => Some(self/x)
+            x => Some(*self/x)
         }
         
     }
@@ -38,23 +38,23 @@ impl Vec3d {
     }
 }
 
-impl ops::Add<&Vec3d> for &Vec3d {
+impl ops::Add<Vec3d> for Vec3d {
     type Output = Vec3d;
 
-    fn add(self, _rhs: &Vec3d) -> Vec3d {
+    fn add(self, _rhs: Vec3d) -> Vec3d {
         Vec3d{x:self.x + _rhs.x, y: self.y + _rhs.y, z: self.z + _rhs.z}
     }
 }
 
-impl ops::Sub<&Vec3d> for &Vec3d {
+impl ops::Sub<Vec3d> for Vec3d {
     type Output = Vec3d;
 
-    fn sub(self, _rhs: &Vec3d) -> Vec3d {
+    fn sub(self, _rhs: Vec3d) -> Vec3d {
         Vec3d{x:self.x - _rhs.x, y: self.y - _rhs.y, z: self.z - _rhs.z}
     }
 }
 
-impl ops::Mul<f64> for &Vec3d {
+impl ops::Mul<f64> for Vec3d {
     type Output = Vec3d;
 
     fn mul(self, _rhs: f64) -> Vec3d {
@@ -62,15 +62,15 @@ impl ops::Mul<f64> for &Vec3d {
     }
 }
 
-impl ops::Mul<&Vec3d> for f64 {
+impl ops::Mul<Vec3d> for f64 {
     type Output = Vec3d;
 
-    fn mul(self, _rhs: &Vec3d) -> Vec3d {
+    fn mul(self, _rhs: Vec3d) -> Vec3d {
         Vec3d{x:self * _rhs.x, y: self * _rhs.y, z: self * _rhs.z}
     }
 }
 
-impl ops::Div<f64> for &Vec3d {
+impl ops::Div<f64> for Vec3d {
     type Output = Vec3d;
 
     fn div(self, _rhs: f64) -> Vec3d {
@@ -92,23 +92,11 @@ impl AbsDiffEq for Vec3d{
     }
 }
 
-impl RelativeEq for Vec3d {
-    fn default_max_relative() -> f64 {
-        f64::default_max_relative()
-    }
-
-    fn relative_eq(&self, other: &Self, epsilon: f64, max_relative: f64) -> bool {
-        f64::relative_eq(&self.x, &other.x, epsilon, max_relative) &&
-        f64::relative_eq(&self.y, &other.y, epsilon, max_relative) &&
-        f64::relative_eq(&self.z, &other.z, epsilon, max_relative)
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
     use super::*;
-    use approx::assert_relative_eq;
+    use approx::assert_abs_diff_eq;
 
     #[test]
     fn access_vec_coord() {
@@ -122,27 +110,27 @@ mod tests {
     fn add_vec() {
         let pt = Vec3d{x:1., y:2., z:3.};
         let vec = Vec3d{x:-3., y:5., z:7.};
-        assert_eq!(&pt + &vec, Vec3d{x: -2., y:7., z:10.});
+        assert_eq!(pt + vec, Vec3d{x: -2., y:7., z:10.});
     }
 
     #[test]
     fn sub_vec() {
         let pt = Vec3d{x:1., y:2., z:3.};
         let vec = Vec3d{x:-3., y:5., z:7.};
-        assert_eq!(&pt - &vec, Vec3d{x: 4., y:-3., z:-4.});
+        assert_eq!(pt - vec, Vec3d{x: 4., y:-3., z:-4.});
     }
 
     #[test]
     fn mult_vec() {
         let vec = Vec3d{x:1., y:2., z:3.};
-        assert_eq!(2. * &vec, Vec3d{x: 2., y:4., z:6.});
-        assert_eq!(2. * &vec, &vec * 2.);
+        assert_eq!(2. * vec, Vec3d{x: 2., y:4., z:6.});
+        assert_eq!(2. * vec, vec * 2.);
     }
 
     #[test]
     fn div_vec() {
         let vec = Vec3d{x:1., y:2., z:3.};
-        assert_eq!(&vec / 2., Vec3d{x: 0.5, y:1., z:1.5});
+        assert_eq!(vec / 2., Vec3d{x: 0.5, y:1., z:1.5});
     }
 
     #[test]
@@ -154,13 +142,13 @@ mod tests {
     #[test]
     fn norm_vec(){
         let vec = Vec3d{x:1., y:2., z:3.};
-        assert_relative_eq!(vec.norm(), 3.7416573867739413);
+        assert_abs_diff_eq!(vec.norm(), 3.7416573867739413);
     }
 
     #[test]
     fn normalized_vec(){
         let vec = Vec3d{x:1., y:2., z:3.};
-        assert_relative_eq!(vec.normalize().unwrap(), Vec3d{x: 0.2672612419124244, 
+        assert_abs_diff_eq!(vec.normalize().unwrap(), Vec3d{x: 0.2672612419124244, 
                                                              y: 0.5345224838248488, 
                                                              z: 0.8017837257372732});
     }

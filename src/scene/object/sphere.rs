@@ -1,9 +1,7 @@
 
 use crate::coord::Vec3d;
-use super::material::Material;
+use super::{material::Material, Intersect};
 use crate::scene::camera::Ray;
-
-
 
 pub struct Sphere{
     pub center: Vec3d,
@@ -16,7 +14,7 @@ impl Sphere {
         Sphere{center, radius, material}
     }
 
-    pub fn intersect(&self, ray: &Ray) -> Option<(f64, Vec3d)>{
+    pub fn intersect(&self, ray: &Ray) -> Option<Intersect>{
         //Formule demi-droite
         //(x+k×dx)² + (y+k×dy)² + (z+k×dz)², k ∈ ℝ⁺
 
@@ -25,14 +23,22 @@ impl Sphere {
         //->k²×(dx²+dy²+dz²)  +  k×2×(x×dx+y×dy+z×dz)  + (x²+y²+z²-RT²)=0
         //     \     a     /       \        b       /    \     c      /
         let a = ray.dir.normsq();
-        let b = 2.0*(&ray.start - &self.center).dot(ray.dir);
-        let c = (&ray.start - &self.center).normsq() - self.radius*self.radius;
+        let b = 2.0*(ray.start - self.center).dot(ray.dir);
+        let c = (ray.start - self.center).normsq() - self.radius*self.radius;
         let k_opt = solve_quadratic(a, b, c);
 
         match k_opt {
             None => None,
             Some(dist) if dist < 0. => None,
-            Some(dist) => Some((dist, &ray.start + &(dist * &ray.dir))),
+            Some(dist) => {
+                let pos = ray.start + (dist * ray.dir);
+                let normal = (pos - self.center).normalize().unwrap();
+                Some(Intersect{pos, 
+                               dist,
+                               normal,
+                               material: self.material.clone()}
+                )
+                },
         }
  
     }
@@ -74,7 +80,7 @@ mod tests {
 
     use super::*;
     extern crate approx;
-    use approx::assert_relative_eq;
+    use approx::assert_abs_diff_eq;
 
     #[test]
     fn quadratic_no_sol() {
@@ -104,9 +110,9 @@ mod tests {
         let ray = Ray{start: Vec3d{ x: 0., y: 0., z: 0. },
                            dir  : Vec3d{ x: 1., y: 0., z: 0. }};
 
-        let (dist, pos) = sphere.intersect(&ray).unwrap();
-        assert_eq!(dist, 1.0);
-        assert_eq!(pos, Vec3d{x:1., y:0., z:0.});
+        let i = sphere.intersect(&ray).unwrap();
+        assert_eq!(i.dist, 1.0);
+        assert_eq!(i.pos, Vec3d{x:1., y:0., z:0.});
     }
 
     #[test]
@@ -117,9 +123,9 @@ mod tests {
         let ray = Ray{start: Vec3d{ x: 0., y: 0., z: 0. },
                            dir  : Vec3d{ x: 1., y: 0., z: 0. }};
 
-        let (dist, pos) = sphere.intersect(&ray).unwrap();
-        assert_eq!(dist, 1.0);
-        assert_eq!(pos, Vec3d{x:1., y:0., z:0.});
+        let i = sphere.intersect(&ray).unwrap();
+        assert_eq!(i.dist, 1.0);
+        assert_eq!(i.pos, Vec3d{x:1., y:0., z:0.});
     }
 
     #[test]
@@ -153,10 +159,10 @@ mod tests {
         let ray = Ray{start: Vec3d{ x: 2., y: 3., z: 4. },
                            dir  : Vec3d{ x: 1., y: 0.2, z: -0.3 }.normalize().unwrap()};
 
-        let (dist, pos) = sphere.intersect(&ray).unwrap();
-        assert_relative_eq!(dist, 3.410205739962394);
-        assert_relative_eq!(pos, Vec3d{ x: 5.208051705064151, 
-                                        y: 3.6416103410128304, 
-                                        z: 3.037584488480755 });
+        let i = sphere.intersect(&ray).unwrap();
+        assert_abs_diff_eq!(i.dist, 3.410205739962394);
+        assert_abs_diff_eq!(i.pos, Vec3d{ x: 5.208051705064151, 
+                                          y: 3.6416103410128304, 
+                                          z: 3.037584488480755 });
     }
 }
