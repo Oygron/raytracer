@@ -25,7 +25,7 @@ impl Sphere {
         //->k²×(dx²+dy²+dz²)  +  k×2×(x×dx+y×dy+z×dz)  + (x²+y²+z²-RT²)=0
         //     \     a     /       \        b       /    \     c      /
         let a = ray.dir.normsq();
-        let b = 2.0*(&ray.start - &self.center).dot(&ray.dir);
+        let b = 2.0*(&ray.start - &self.center).dot(ray.dir);
         let c = (&ray.start - &self.center).normsq() - self.radius*self.radius;
         let k_opt = solve_quadratic(a, b, c);
 

@@ -23,8 +23,8 @@ impl Camera {
         let fov = fov.unwrap_or_else(|| 90.);
         
         //Vecteur orthogonal = up - (projection de up sur dir), 
-        let up = (&up - &(up.dot(&dir) * &dir)).normalize().unwrap();
-        let right = dir.cross(&up);
+        let up = (&up - &(up.dot(dir) * &dir)).normalize().unwrap();
+        let right = dir.cross(up);
 
         let delta = (fov * PI / 180.)/resolution.0 as f64;
         let px_down = &up * -delta;

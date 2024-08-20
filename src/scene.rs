@@ -9,6 +9,7 @@ use std::fs;
 use std::path::Path;
 use std::fs::File;
 use std::io::BufWriter;
+use std::str::FromStr;
 
 mod camera;
 mod light;
@@ -23,6 +24,7 @@ use object::sphere::Sphere;
 
 pub struct Scene{
     camera: Camera,
+    ambiant_light: Light,
     lights: Vec<Light>,
     objects: Vec<Object>,
 }
@@ -43,6 +45,7 @@ impl Scene {
         let mut camera: Option<Camera> = None;
         let mut lights: Vec<Light> = vec![];
         let mut objects: Vec<Object> = vec![];
+        let mut ambiant_light: Option<Light> = None;
 
         let mut buf = Vec::new();
         loop {
@@ -55,9 +58,9 @@ impl Scene {
                     match e.name().as_ref() {
                         b"scene" => (),//Nothing to do, root.
                         b"camera" => camera = Some(Self::read_camera(&mut reader)),
-                        b"point_light" => (),//todo!(),
-                        b"ambiant_light" => lights.push(Self::read_ambiant_light(&mut reader)),//todo!(),
-                        b"sphere" => objects.push(Self::read_sphere(&mut reader)),//todo!(),
+                        b"point_light" => lights.push(Self::read_point_light(&mut reader)),
+                        b"ambiant_light" => ambiant_light = Some(Self::read_ambiant_light(&mut reader)),
+                        b"sphere" => objects.push(Self::read_sphere(&mut reader)),
                         b"object" => (),//todo!(),
                         _ => (),
                     }
@@ -69,7 +72,7 @@ impl Scene {
             buf.clear();
         }
 
-        Scene{camera: camera.unwrap(), lights, objects}
+        Scene{camera: camera.unwrap(), ambiant_light: ambiant_light.unwrap(), lights, objects}
     }
 
     fn read_value_as_f64(a: Result<Attribute, AttrError>) -> f64 {
@@ -113,41 +116,16 @@ impl Scene {
         Color{r, g, b}
     }
 
-    fn read_intensity(e: BytesStart) -> f64{
-        let mut i = 0.0;
-        for a in e.attributes(){
-            let a_cloned = a.clone();
-            match a.unwrap().key {
-                QName(b"i") => i = Self::read_value_as_f64(a_cloned),
-                _ => (),
-            }
-
+    fn read_property<T: FromStr>(e: &BytesStart, property_name: &[u8]) -> Option<T> {
+        match e.attributes().find(|a| a.as_ref().unwrap().key == QName(property_name)){
+            None => None,
+            Some(a) => {
+                match String::from_utf8_lossy(a.unwrap().value.as_ref()).parse::<T>(){
+                    Err(_)=> None,
+                    Ok(v) => Some(v),
+                } 
+            },
         }
-        i
-    }
-    fn read_reflectivity(e: BytesStart) -> f64{
-        let mut r = 0.0;
-        for a in e.attributes(){
-            let a_cloned = a.clone();
-            match a.unwrap().key {
-                QName(b"r") => r = Self::read_value_as_f64(a_cloned),
-                _ => (),
-            }
-
-        }
-        r
-    }
-    fn read_radius(e: BytesStart) -> f64{
-        let mut r = 0.0;
-        for a in e.attributes(){
-            let a_cloned = a.clone();
-            match a.unwrap().key {
-                QName(b"r") => r = Self::read_value_as_f64(a_cloned),
-                _ => (),
-            }
-
-        }
-        r
     }
 
     fn read_camera(reader: &mut Reader<&[u8]>) -> Camera {
@@ -179,6 +157,38 @@ impl Scene {
         Camera::new(pos.unwrap(), dir.unwrap(), None, None, None)
     }
 
+    fn read_point_light(reader: &mut Reader<&[u8]>) -> Light {
+        let mut buf = Vec::new();
+        let mut pos: Option<Vec3d> = None;
+        let mut color: Option<Color> = None;
+        let mut intensity = 0.;
+        loop {
+            match reader.read_event_into(&mut buf) {
+                Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
+                Ok(Event::Eof) => panic!("Unexpected EOF"),
+                Ok(Event::Empty(e)) => {
+                    match e.name().as_ref() {
+                        b"color" => color = Some(Self::read_color(e)),
+                        b"intensity" => intensity = Self::read_property::<f64>(&e, b"i").unwrap(),
+                        b"pos" => pos = Some(Self::read_vec3d(e)),
+                        _ => (),
+                    }
+                },
+                Ok(Event::Start(e)) => panic!("unexpected block begin named {:?}", e.name().as_ref()),
+                Ok(Event::End(e)) => {
+                    match e.name().as_ref(){
+                        b"ambiant_light" => break,
+                        name => panic!("unexpected end {:?}", name),
+                    }
+                }
+                _ => (),
+            }
+            buf.clear();
+        }
+        Light{color: color.unwrap(), intensity, light_type: LightType::PointLight { pos: pos.unwrap() }}
+    }
+
+
     fn read_ambiant_light(reader: &mut Reader<&[u8]>) -> Light {
         let mut buf = Vec::new();
         let mut color: Option<Color> = None;
@@ -190,7 +200,7 @@ impl Scene {
                 Ok(Event::Empty(e)) => {
                     match e.name().as_ref() {
                         b"color" => color = Some(Self::read_color(e)),
-                        b"intensity" => intensity = Self::read_intensity(e),
+                        b"intensity" => intensity = Self::read_property::<f64>(&e, b"i").unwrap(),
                         _ => (),
                     }
                 },
@@ -221,7 +231,7 @@ impl Scene {
                     match e.name().as_ref() {
                         b"color" => color = Some(Self::read_color(e)),
                         b"specular" => specular = Some(Self::read_color(e)),
-                        b"reflectivity" => reflectivity = Self::read_reflectivity(e),
+                        b"reflectivity" => reflectivity = Self::read_property::<f64>(&e, b"r").unwrap(),
                         _ => (),
                     }
                 },
@@ -251,7 +261,7 @@ impl Scene {
                 Ok(Event::Empty(e)) => {
                     match e.name().as_ref() {
                         b"pos" => pos = Some(Self::read_vec3d(e)),
-                        b"radius" => r = Self::read_radius(e),
+                        b"radius" => r = Self::read_property::<f64>(&e, b"r").unwrap(),
                         _ => (),
                     }
                 },
@@ -273,6 +283,32 @@ impl Scene {
         Object::Sphere(Sphere::new(pos.unwrap(), r, mat.unwrap()))
     }
 
+
+    fn to_png(&self, data: Vec<f64>){
+        //Normalisation
+        let data: Vec<u8> = data.iter().map(|v| (*v * 255.) as u8 ).collect();
+
+        let path = Path::new(r"image.png");
+        let file = File::create(path).unwrap();
+        let ref mut w = BufWriter::new(file);
+
+        let mut encoder = png::Encoder::new(w, self.camera.width(), self.camera.height()); // Width is 2 pixels and height is 1.
+        encoder.set_color(png::ColorType::Rgb);
+        encoder.set_depth(png::BitDepth::Eight);
+        //encoder.set_source_gamma(png::ScaledFloat::from_scaled(45455)); // 1.0 / 2.2, scaled by 100000
+        //encoder.set_source_gamma(png::ScaledFloat::new(1.0 / 2.2));     // 1.0 / 2.2, unscaled, but rounded
+        //let source_chromaticities = png::SourceChromaticities::new(     // Using unscaled instantiation here
+        //    (0.31270, 0.32900),
+        //    (0.64000, 0.33000),
+        //    (0.30000, 0.60000),
+        //    (0.15000, 0.06000)
+        //);
+        //encoder.set_source_chromaticities(source_chromaticities);
+        let mut writer = encoder.write_header().unwrap();
+
+        // An array containing a RGBA sequence.
+        writer.write_image_data(&data).unwrap(); // Save
+    }
     pub fn render(&self) {
 
         let mut data: Vec<f64> = vec![];
@@ -300,14 +336,13 @@ impl Scene {
                 }
 
                 if color == None {
-                    color = Some(Color{r: 0., g:0., b:0.});
+                    color = Some(self.ambiant_light.color.clone());
                     for light in self.lights.iter() {
                         match light.light_type {
                             LightType::AmbiantLight => color = Some(light.color.clone()),
                             _ => (),
                         }
                     }
-
                 }
 
                 if color==None{
@@ -323,29 +358,7 @@ impl Scene {
             }
         }
 
-        //Normalisation
-        let data: Vec<u8> = data.iter().map(|v| (*v * 255.) as u8 ).collect();
-
-        let path = Path::new(r"image.png");
-        let file = File::create(path).unwrap();
-        let ref mut w = BufWriter::new(file);
-
-        let mut encoder = png::Encoder::new(w, self.camera.width(), self.camera.height()); // Width is 2 pixels and height is 1.
-        encoder.set_color(png::ColorType::Rgb);
-        encoder.set_depth(png::BitDepth::Eight);
-        //encoder.set_source_gamma(png::ScaledFloat::from_scaled(45455)); // 1.0 / 2.2, scaled by 100000
-        //encoder.set_source_gamma(png::ScaledFloat::new(1.0 / 2.2));     // 1.0 / 2.2, unscaled, but rounded
-        //let source_chromaticities = png::SourceChromaticities::new(     // Using unscaled instantiation here
-        //    (0.31270, 0.32900),
-        //    (0.64000, 0.33000),
-        //    (0.30000, 0.60000),
-        //    (0.15000, 0.06000)
-        //);
-        //encoder.set_source_chromaticities(source_chromaticities);
-        let mut writer = encoder.write_header().unwrap();
-
-        // An array containing a RGBA sequence.
-        writer.write_image_data(&data).unwrap(); // Save
+        self.to_png(data);
 
     }
     
@@ -386,6 +399,17 @@ mod tests {
         );
         let col = Scene::read_color(bs);
         assert_eq!(col, Color{r:1., g:0., b:0.});
+    }
+
+    #[test]
+    fn parse_multi_attributes() {
+        let bs = BytesStart::from_content(
+            "color r=\"2.8\" g=\"-0.5\" toto=\"abc\"",
+            5
+        );
+        assert_eq!(Scene::read_property::<f64>(&bs, b"r"), Some(2.8));
+        assert_eq!(Scene::read_property::<f64>(&bs, b"b"), None);
+        assert_eq!(Scene::read_property::<f64>(&bs, b"toto"), None);
     }
 
 }

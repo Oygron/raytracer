@@ -4,12 +4,13 @@ extern crate approx;
 use approx::{RelativeEq, AbsDiffEq};
 use std::f64;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Vec3d {
     pub x:f64,
     pub y:f64,
     pub z:f64,
 }
+
 
 impl Vec3d {
     pub fn normsq(&self) -> f64 {
@@ -25,10 +26,10 @@ impl Vec3d {
         }
         
     }
-    pub fn dot(&self, other: &Vec3d) -> f64{
+    pub fn dot(&self, other: Vec3d) -> f64{
         self.x*other.x + self.y*other.y + self.z*other.z
     }
-    pub fn cross(&self, other: &Vec3d) -> Vec3d{
+    pub fn cross(&self, other: Vec3d) -> Vec3d{
         Vec3d{
             x: self.y*other.z - other.y*self.z,
             y: self.z*other.x - other.z*self.x,
@@ -174,20 +175,20 @@ mod tests {
     fn dot_vec_gene() {
         let vec1 = Vec3d{x:1., y:2., z:3.};
         let vec2 = Vec3d{x:-3., y:5., z:7.};
-        assert_eq!(vec1.dot(&vec2), 28.);
+        assert_eq!(vec1.dot(vec2), 28.);
     }
 
     #[test]
     fn dot_ortho() {
         let vec1 = Vec3d{x:1., y:0., z:0.};
         let vec2 = Vec3d{x:0., y:1., z:0.};
-        assert_eq!(vec1.dot(&vec2), 0.);
+        assert_eq!(vec1.dot(vec2), 0.);
     }
 
     #[test]
     fn cross_ortho() {
         let vec1 = Vec3d{x:1., y:0., z:0.};
         let vec2 = Vec3d{x:0., y:1., z:0.};
-        assert_eq!(vec1.cross(&vec2), Vec3d{x:0., y:0., z:1.});
+        assert_eq!(vec1.cross(vec2), Vec3d{x:0., y:0., z:1.});
     }
 }
