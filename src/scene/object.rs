@@ -1,20 +1,20 @@
-pub mod sphere;
 pub mod material;
 pub mod rasterized;
+pub mod sphere;
 
+use crate::coord::Vec3d;
 use material::Material;
 use sphere::Sphere;
-use crate::coord::Vec3d;
 
-#[derive (Debug, PartialEq)]
-pub struct Intersect{
+#[derive(Debug, PartialEq)]
+pub struct Intersect {
     pub pos: Vec3d,
     pub dist: f64,
     pub normal: Vec3d,
     pub material: Material,
 }
 
-pub enum Object{
+pub enum Object {
     Sphere(Sphere),
     Rasterized,
 }

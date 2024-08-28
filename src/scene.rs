@@ -1,9 +1,8 @@
-
 use core::f64;
 use std::env;
 use std::fs::{self, File};
-use std::path::Path;
 use std::io::BufWriter;
+use std::path::Path;
 
 use camera::Camera;
 use light::Light;
@@ -15,7 +14,7 @@ mod object;
 mod parser;
 mod renderer;
 
-pub struct Scene{
+pub struct Scene {
     pub camera: Camera,
     pub ambiant_light: Light,
     pub lights: Vec<Light>,
@@ -24,16 +23,17 @@ pub struct Scene{
 
 impl Scene {
     pub fn load(filename: String) -> Scene {
-        let file_content = fs::read_to_string(&filename)
-            .expect(&format!("file {} cannot be read (path {})",
-                &filename, 
-                env::current_dir().unwrap().display()));
+        let file_content = fs::read_to_string(&filename).expect(&format!(
+            "file {} cannot be read (path {})",
+            &filename,
+            env::current_dir().unwrap().display()
+        ));
         parser::load_from_xml_string(file_content)
     }
 
-    fn to_png(&self, data: Vec<f64>){
+    fn to_png(&self, data: Vec<f64>) {
         //-> [0..255]
-        let data: Vec<u8> = data.iter().map(|v| (*v * 255.) as u8 ).collect();
+        let data: Vec<u8> = data.iter().map(|v| (*v * 255.) as u8).collect();
 
         let path = Path::new(r"image.png");
         let file = File::create(path).unwrap();
@@ -47,9 +47,8 @@ impl Scene {
         // An array containing a RGBA sequence.
         writer.write_image_data(&data).unwrap(); // Save
     }
-    
-    pub fn render(&self) {
 
+    pub fn render(&self) {
         let data: Vec<f64> = renderer::render(self);
         self.to_png(data);
     }
