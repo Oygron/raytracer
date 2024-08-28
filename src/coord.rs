@@ -11,7 +11,6 @@ pub struct Vec3d {
     pub z:f64,
 }
 
-
 impl Vec3d {
     pub fn normsq(&self) -> f64 {
         self.x*self.x + self.y*self.y + self.z*self.z

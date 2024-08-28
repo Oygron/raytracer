@@ -60,7 +60,7 @@ fn solve_quadratic(a: f64, b: f64, c: f64) -> Option<f64> {
     };
 
     if s1 >= 0. {
-        return Some(s1);
+        Some(s1)
     } else {
         let s2 = if a>0. {
             (-b + delta.sqrt())/(2.*a)
@@ -69,9 +69,10 @@ fn solve_quadratic(a: f64, b: f64, c: f64) -> Option<f64> {
         };
 
         if s2 < 0. {
-            return None;
+            None
+        } else {
+            Some(s2)
         }
-        return Some(s2);
     }
 }
 

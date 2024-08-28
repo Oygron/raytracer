@@ -1,7 +1,7 @@
 
 use quick_xml::reader::Reader;
 use quick_xml::events::{Event, BytesStart};
-use quick_xml::events::attributes::{Attribute, AttrError};
+use quick_xml::events::attributes::Attribute;
 use quick_xml::name::QName;
 
 use std::str::FromStr;
@@ -53,8 +53,8 @@ pub fn load_from_xml_string(file_content: String) -> Scene {
     Scene{camera: camera.unwrap(), ambiant_light: ambiant_light.unwrap(), lights, objects}
 }
 
-fn read_value_as_f64(a: Result<Attribute, AttrError>) -> f64 {
-    String::from_utf8_lossy(a.unwrap().value.as_ref()).parse::<f64>().unwrap()
+fn read_value_as_f64(a: &[u8]) -> f64 {
+    String::from_utf8_lossy(a).parse::<f64>().unwrap()
 }
 
 fn read_vec3d(e: BytesStart) -> Vec3d{
@@ -62,11 +62,11 @@ fn read_vec3d(e: BytesStart) -> Vec3d{
     let mut y = 0.0;
     let mut z = 0.0;
     for a in e.attributes(){
-        let a_cloned = a.clone();
-        match a.unwrap().key {
-            QName(b"x") => x = read_value_as_f64(a_cloned),
-            QName(b"y") => y = read_value_as_f64(a_cloned),
-            QName(b"z") => z = read_value_as_f64(a_cloned),
+        let Attribute{key: k, value} = a.unwrap();
+        match k {
+            QName(b"x") => x = read_value_as_f64(&value),
+            QName(b"y") => y = read_value_as_f64(&value),
+            QName(b"z") => z = read_value_as_f64(&value),
             _ => (),
         }
 
@@ -79,11 +79,11 @@ fn read_color(e: BytesStart) -> Color{
     let mut g = 0.0;
     let mut b = 0.0;
     for a in e.attributes(){
-        let a_cloned = a.clone();
-        match a.unwrap().key {
-            QName(b"r") => r = read_value_as_f64(a_cloned),
-            QName(b"g") => g = read_value_as_f64(a_cloned),
-            QName(b"b") => b = read_value_as_f64(a_cloned),
+        let Attribute{key: k, value} = a.unwrap();
+        match k {
+            QName(b"r") => r = read_value_as_f64(&value),
+            QName(b"g") => g = read_value_as_f64(&value),
+            QName(b"b") => b = read_value_as_f64(&value),
             _ => (),
         }
 
@@ -270,7 +270,6 @@ fn read_sphere(reader: &mut Reader<&[u8]>) -> Object {
 mod tests {
 
     use super::*;
-    //use quick_xml::events::Event::Start;
 
     #[test]
     fn parse_vec() {
@@ -315,7 +314,6 @@ mod tests {
 
     #[test]
     fn parse_ambiant_light(){
-
         let mut reader = Reader::from_str("<ambiant_light>
             <color r=\"0.6\" g=\"0.8\" b=\"1\"/>
             <intensity i=\"0.3\"/>

@@ -6,8 +6,7 @@ use super::light::LightType;
 
 
 pub fn render(scene: &Scene) -> Vec<f64> {
-    let mut data: Vec<f64> = vec![];
-    data.reserve(3 * scene.camera.height() as usize * scene.camera.width() as usize);
+    let mut data: Vec<f64> = Vec::with_capacity(3 * scene.camera.height() as usize * scene.camera.width() as usize);
     for l in 0..scene.camera.height() {
         for c in 0..scene.camera.width(){
             let color = render_pixel(scene, l, c);
@@ -36,7 +35,9 @@ fn render_pixel(scene: &Scene, l: u32, c: u32) -> Color{
                         for light in scene.lights.iter() {
                             if let LightType::PointLight { pos:light_pos } = light.light_type  {
                                 let factor = i.normal.dot(light_pos - i.pos);
-                                color_tmp = color_tmp + s.material.base * light.color * light.intensity * factor;
+                                if factor > 0. {
+                                    color_tmp = color_tmp + s.material.base * light.color * light.intensity * factor;
+                                }
                             }
                         }
                         color = Some(color_tmp);

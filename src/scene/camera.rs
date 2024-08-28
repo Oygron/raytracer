@@ -19,9 +19,9 @@ pub struct Ray{
 impl Camera {
     pub fn new(pos: Vec3d, dir: Vec3d, up: Option<Vec3d>, resolution: Option<(u32, u32)>, fov: Option<f64>) -> Camera {
         let dir = dir.normalize().unwrap();
-        let up = up.unwrap_or_else(|| Vec3d{x:0., y:0., z:1.}).normalize().unwrap();
-        let resolution = resolution.unwrap_or_else(|| (1024, 768));
-        let fov = fov.unwrap_or_else(|| 90.);
+        let up = up.unwrap_or(Vec3d{x:0., y:0., z:1.}).normalize().unwrap();
+        let resolution = resolution.unwrap_or((1024, 768));
+        let fov = fov.unwrap_or(90.);
         
         //Vecteur orthogonal = up - (projection de up sur dir), 
         let up = (up - (up.dot(dir) * dir)).normalize().unwrap();
@@ -46,7 +46,7 @@ impl Camera {
 
         let px_window = self.dir + (dy * self.px_down) + (dx * self.px_left);
 
-        Ray{start: self.pos.clone(), dir: px_window.normalize().unwrap()}
+        Ray{start: self.pos, dir: px_window.normalize().unwrap()}
     }
 
     pub fn width(&self) -> u32 {

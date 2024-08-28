@@ -1,21 +1,19 @@
 
 use core::f64;
 use std::env;
-use std::fs;
-
+use std::fs::{self, File};
 use std::path::Path;
-use std::fs::File;
 use std::io::BufWriter;
+
+use camera::Camera;
+use light::Light;
+use object::Object;
 
 mod camera;
 mod light;
 mod object;
 mod parser;
 mod renderer;
-
-use camera::Camera;
-use light::Light;
-use object::Object;
 
 pub struct Scene{
     pub camera: Camera,
@@ -33,14 +31,13 @@ impl Scene {
         parser::load_from_xml_string(file_content)
     }
 
-
     fn to_png(&self, data: Vec<f64>){
         //-> [0..255]
         let data: Vec<u8> = data.iter().map(|v| (*v * 255.) as u8 ).collect();
 
         let path = Path::new(r"image.png");
         let file = File::create(path).unwrap();
-        let ref mut w = BufWriter::new(file);
+        let w = &mut BufWriter::new(file);
 
         let mut encoder = png::Encoder::new(w, self.camera.width(), self.camera.height()); // Width is 2 pixels and height is 1.
         encoder.set_color(png::ColorType::Rgb);
@@ -53,8 +50,7 @@ impl Scene {
     
     pub fn render(&self) {
 
-        let mut data: Vec<f64> = renderer::render(&self);
+        let data: Vec<f64> = renderer::render(self);
         self.to_png(data);
     }
-    
 }
