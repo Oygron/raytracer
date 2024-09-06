@@ -8,6 +8,8 @@ use std::str::FromStr;
 use super::camera::Camera;
 use super::light::{Light, LightType};
 use super::object::material::{Color, Material};
+use super::object::rasterized::face::Face;
+use super::object::rasterized::Rasterized;
 use super::object::sphere::Sphere;
 use super::object::Object;
 use crate::coord::Vec3d;
@@ -37,7 +39,7 @@ pub fn load_from_xml_string(file_content: String) -> Scene {
                     b"point_light" => lights.push(read_point_light(&mut reader)),
                     b"ambiant_light" => ambiant_light = Some(read_ambiant_light(&mut reader)),
                     b"sphere" => objects.push(read_sphere(&mut reader)),
-                    b"object" => (), //todo!(),
+                    b"object" => objects.push(read_object(&mut reader)),
                     _ => (),
                 }
             }
@@ -59,7 +61,7 @@ pub fn load_from_xml_string(file_content: String) -> Scene {
 }
 
 fn read_value_as_f64(a: &[u8]) -> f64 {
-    String::from_utf8_lossy(a).parse::<f64>().unwrap()
+    String::from_utf8_lossy(a).trim().parse::<f64>().unwrap()
 }
 
 fn read_vec3d(e: BytesStart) -> Vec3d {
@@ -200,7 +202,7 @@ fn read_ambiant_light(reader: &mut Reader<&[u8]>) -> Light {
 
 fn read_material(reader: &mut Reader<&[u8]>) -> Material {
     let mut buf = Vec::new();
-    let mut color: Option<Color> = None;
+    let mut diffuse: Option<Color> = None;
     let mut specular: Option<Color> = None;
     let mut reflectivity = 0.;
     loop {
@@ -208,7 +210,7 @@ fn read_material(reader: &mut Reader<&[u8]>) -> Material {
             Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
             Ok(Event::Eof) => panic!("Unexpected EOF"),
             Ok(Event::Empty(e)) => match e.name().as_ref() {
-                b"color" => color = Some(read_color(e)),
+                b"diffuse" => diffuse = Some(read_color(e)),
                 b"specular" => specular = Some(read_color(e)),
                 b"reflectivity" => reflectivity = read_property::<f64>(&e, b"r").unwrap(),
                 _ => (),
@@ -223,7 +225,7 @@ fn read_material(reader: &mut Reader<&[u8]>) -> Material {
         buf.clear();
     }
     Material {
-        base: color.unwrap(),
+        diffuse: diffuse.unwrap(),
         specular: specular.unwrap(),
         reflectivity,
     }
@@ -256,6 +258,56 @@ fn read_sphere(reader: &mut Reader<&[u8]>) -> Object {
         buf.clear();
     }
     Object::Sphere(Sphere::new(pos.unwrap(), r, mat.unwrap()))
+}
+
+
+fn read_face(reader: &mut Reader<&[u8]>) -> Face {
+    let mut buf = Vec::new();
+    let mut pts = Vec::new();
+    loop {
+        match reader.read_event_into(&mut buf) {
+            Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
+            Ok(Event::Eof) => panic!("Unexpected EOF"),
+            Ok(Event::Empty(e)) => match e.name().as_ref() {
+                b"pos" => pts.push(read_vec3d(e)),
+                _ => (),
+            },
+            Ok(Event::End(e)) => match e.name().as_ref() {
+                b"face" => break,
+                name => panic!("unexpected end {:?}", name),
+            },
+            _ => (),
+        }
+        buf.clear();
+    }
+    Face::new(pts[0], pts[1], pts[2])
+}
+
+fn read_object(reader: &mut Reader<&[u8]>) -> Object {
+    let mut buf = Vec::new();
+    let mut mat: Option<Material> = None;
+    let mut faces = Vec::new();
+    loop {
+        match reader.read_event_into(&mut buf) {
+            Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
+            Ok(Event::Eof) => panic!("Unexpected EOF"),
+            Ok(Event::Empty(e)) => match e.name().as_ref() {
+                _ => (),
+            },
+            Ok(Event::Start(e)) => match e.name().as_ref() {
+                b"face" => faces.push(read_face(reader)),
+                b"material" => mat = Some(read_material(reader)),
+                name => panic!("unexpected block begin named {:?}", name),
+            },
+            Ok(Event::End(e)) => match e.name().as_ref() {
+                b"object" => break,
+                name => panic!("unexpected end {:?}", name),
+            },
+            _ => (),
+        }
+        buf.clear();
+    }
+    Object::Rasterized(Rasterized{faces: faces, material: mat.unwrap()})
 }
 
 #[cfg(test)]

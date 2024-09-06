@@ -34,6 +34,16 @@ impl Vec3d {
             z: self.x * other.y - other.x * self.y,
         }
     }
+    pub fn sum(&self) -> f64 {
+        self.x + self.y + self.z
+    }
+    //Axis must be unit vector
+    pub fn symmetry(self, axis: Vec3d) -> Vec3d {
+        //Project on axis
+        let proj = axis * axis.dot(self);
+        let delta = proj - self;
+        self + 2. * delta
+    }
 }
 
 impl ops::Add<Vec3d> for Vec3d {
@@ -80,6 +90,18 @@ impl ops::Mul<Vec3d> for f64 {
             x: self * _rhs.x,
             y: self * _rhs.y,
             z: self * _rhs.z,
+        }
+    }
+}
+
+impl ops::Mul<Vec3d> for Vec3d {
+    type Output = Vec3d;
+
+    fn mul(self, _rhs: Vec3d) -> Vec3d {
+        Vec3d {
+            x: self.x * _rhs.x,
+            y: self.y * _rhs.y,
+            z: self.z * _rhs.z,
         }
     }
 }
@@ -188,6 +210,28 @@ mod tests {
             }
         );
         assert_eq!(2. * vec, vec * 2.);
+    }
+
+    #[test]
+    fn mult_vecs() {
+        let vec1 = Vec3d {
+            x: 1.,
+            y: 2.,
+            z: 3.,
+        };
+        let vec2 = Vec3d {
+            x: -3.,
+            y: 5.,
+            z: 7.,
+        };
+        assert_eq!(
+            vec1 * vec2,
+            Vec3d {
+                x: -3.,
+                y: 10.,
+                z: 21.
+            }
+        );
     }
 
     #[test]
@@ -303,6 +347,62 @@ mod tests {
                 y: 0.,
                 z: 1.
             }
+        );
+    }
+
+    #[test]
+    fn symmetry_ortho() {
+        let vec = Vec3d {
+            x: 1.,
+            y: 0.,
+            z: 0.,
+        };
+        let axis = Vec3d {
+            x: 0.,
+            y: 1.,
+            z: 0.,
+        };
+        assert_eq!(
+            vec.symmetry(axis),
+            Vec3d {
+                x: -1.,
+                y:  0.,
+                z:  0.
+            }
+        );
+    }
+    #[test]
+    fn symmetry_gene() {
+        let vec = Vec3d {
+            x: 1.,
+            y: 0.,
+            z: 1.,
+        };
+        let axis = Vec3d {
+            x: 0.,
+            y: 0.,
+            z: 1.,
+        };
+        assert_eq!(
+            vec.symmetry(axis),
+            Vec3d {
+                x: -1.,
+                y:  0.,
+                z:  1.
+            }
+        );
+    }
+
+    #[test]
+    fn term_sum() {
+        let vec = Vec3d {
+            x: 1.,
+            y: 2.,
+            z: 3.,
+        };
+        assert_eq!(
+            vec.sum(),
+            6.
         );
     }
 }

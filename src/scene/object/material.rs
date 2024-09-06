@@ -13,7 +13,7 @@ pub struct Color {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Material {
-    pub base: Color,
+    pub diffuse: Color,
     pub specular: Color,
     pub reflectivity: f64,
 }
@@ -32,7 +32,7 @@ impl Material {
         };
         let reflectivity = 0.;
         Material {
-            base,
+            diffuse: base,
             specular,
             reflectivity,
         }

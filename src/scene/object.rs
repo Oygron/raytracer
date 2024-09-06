@@ -4,6 +4,7 @@ pub mod sphere;
 
 use crate::coord::Vec3d;
 use material::Material;
+use rasterized::Rasterized;
 use sphere::Sphere;
 
 #[derive(Debug, PartialEq)]
@@ -16,5 +17,5 @@ pub struct Intersect {
 
 pub enum Object {
     Sphere(Sphere),
-    Rasterized,
+    Rasterized(Rasterized),
 }

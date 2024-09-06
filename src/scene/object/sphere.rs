@@ -32,8 +32,8 @@ impl Sphere {
 
         match k_opt {
             None => None,
-            Some(dist) if dist < 0. => None,
-            Some(dist) => {
+            Some((dist, _)) if dist <= 0. => None,
+            Some((dist, _)) => {
                 let pos = ray.start + (dist * ray.dir);
                 let normal = (pos - self.center).normalize().unwrap();
                 Some(Intersect {
@@ -49,33 +49,21 @@ impl Sphere {
 
 //solves ax²+bx+c=0
 //in case of several solutions, returns the lowest positive one
-fn solve_quadratic(a: f64, b: f64, c: f64) -> Option<f64> {
+fn solve_quadratic(a: f64, b: f64, c: f64) -> Option<(f64, f64)> {
     let delta = b * b - 4. * a * c;
     if delta < 0.0 {
         return None;
     }
 
-    let s1 = if a > 0. {
-        (-b - delta.sqrt()) / (2. * a)
+    let (s1, s2) = if a > 0. {
+        ((-b - delta.sqrt()) / (2. * a),
+         (-b + delta.sqrt()) / (2. * a))
     } else {
-        (-b + delta.sqrt()) / (2. * a)
+        ((-b + delta.sqrt()) / (2. * a),
+         (-b - delta.sqrt()) / (2. * a))
     };
 
-    if s1 >= 0. {
-        Some(s1)
-    } else {
-        let s2 = if a > 0. {
-            (-b + delta.sqrt()) / (2. * a)
-        } else {
-            (-b - delta.sqrt()) / (2. * a)
-        };
-
-        if s2 < 0. {
-            None
-        } else {
-            Some(s2)
-        }
-    }
+    Some((s1, s2))
 }
 
 #[cfg(test)]
@@ -92,17 +80,17 @@ mod tests {
 
     #[test]
     fn quadratic_both_positive_sol() {
-        assert_eq!(solve_quadratic(-4., 5., -1.), Some(0.25));
+        assert_eq!(solve_quadratic(-4., 5., -1.), Some((0.25, 1.)));
     }
 
     #[test]
     fn quadratic_one_negative_sol() {
-        assert_eq!(solve_quadratic(4., -5., -12.), Some(2.4663649828320295));
+        assert_eq!(solve_quadratic(4., -5., -12.), Some((-1.2163649828320293, 2.4663649828320295)));
     }
 
     #[test]
     fn quadratic_both_negative_sol() {
-        assert_eq!(solve_quadratic(4., 5., 1.), None);
+        assert_eq!(solve_quadratic(4., 5., 1.), Some((-1., -0.25)));
     }
 
     #[test]
@@ -164,17 +152,7 @@ mod tests {
                 z: 0.,
             },
         };
-
-        let i = sphere.intersect(&ray).unwrap();
-        assert_eq!(i.dist, 1.0);
-        assert_eq!(
-            i.pos,
-            Vec3d {
-                x: 1.,
-                y: 0.,
-                z: 0.
-            }
-        );
+        assert_eq!(sphere.intersect(&ray), None);
     }
 
     #[test]

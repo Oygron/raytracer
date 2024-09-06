@@ -11,6 +11,7 @@ pub struct Camera {
     resolution: (u32, u32),
 }
 
+#[derive(Clone, Copy)]
 pub struct Ray {
     pub start: Vec3d,
     pub dir: Vec3d,

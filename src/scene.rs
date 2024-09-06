@@ -14,6 +14,8 @@ mod object;
 mod parser;
 mod renderer;
 
+pub const MAX_BOUNCES:u16 = 10;
+
 pub struct Scene {
     pub camera: Camera,
     pub ambiant_light: Light,
