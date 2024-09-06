@@ -31,7 +31,6 @@ pub fn load_from_xml_string(file_content: String) -> Scene {
             Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
             // exits the loop when reaching end of file
             Ok(Event::Eof) => break,
-
             Ok(Event::Start(e)) => {
                 match e.name().as_ref() {
                     b"scene" => (), //Nothing to do, root.
@@ -43,9 +42,9 @@ pub fn load_from_xml_string(file_content: String) -> Scene {
                     _ => (),
                 }
             }
-            Ok(Event::End(e)) => {
-                println!("Exiting {:?}", String::from_utf8_lossy(e.name().as_ref()))
-            }
+            //Ok(Event::End(e)) => {
+            //    println!("Exiting {:?}", String::from_utf8_lossy(e.name().as_ref()))
+            //}
             _ => (),
         }
         // if we don't keep a borrow elsewhere, we can clear the buffer to keep memory usage low

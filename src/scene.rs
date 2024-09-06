@@ -51,7 +51,9 @@ impl Scene {
     }
 
     pub fn render(&self) {
-        let data: Vec<f64> = renderer::render(self);
+        //let data: Vec<f64> = renderer::render(self);
+        //let data: Vec<f64> = renderer::render_multitrhead(self);
+        let data: Vec<f64> = renderer::render_rayon(self);
         self.to_png(data);
     }
 }

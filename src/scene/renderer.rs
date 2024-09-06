@@ -1,4 +1,8 @@
 use std::f64::consts::PI;
+use std::sync::mpsc::channel;
+use threadpool::ThreadPool;
+use threadpool_scope::scope_with;
+use rayon::prelude::*;
 
 use crate::coord::Vec3d;
 
@@ -9,11 +13,62 @@ use super::object::{Intersect, Object};
 use super::{Scene, MAX_BOUNCES};
 
 #[cfg(debug_assertions)]
-const NB_ITER: u64 = 2;
+const NB_ITER: usize = 2;
 
 #[cfg(not(debug_assertions))]
-const NB_ITER: u64 = 100;
+const NB_ITER: usize = 100;
 
+const NB_WORKERS: usize = 4;
+
+pub fn render_rayon(scene: &Scene) -> Vec<f64> {
+
+    let mut data: Vec<f64> =
+        Vec::with_capacity(3 * scene.camera.height() as usize * scene.camera.width() as usize);
+    
+    for l in 0..scene.camera.height() {
+        for c in 0..scene.camera.width() {
+            let color = 
+                (0..NB_ITER)
+                .into_par_iter()
+                .map(|_| render_pixel(scene, l, c))
+                .reduce(|| Color{r:0., g:0., b:0.}, 
+                |a, b| a + b);
+
+            data.push(color.r);
+            data.push(color.g);
+            data.push(color.b);
+        }
+    }
+
+    normalize(data)
+}
+
+pub fn render_multitrhead(scene: &Scene) -> Vec<f64> {
+    let pool = ThreadPool::new(NB_WORKERS);
+
+    let mut data: Vec<f64> =
+        Vec::with_capacity(3 * scene.camera.height() as usize * scene.camera.width() as usize);
+    for l in 0..scene.camera.height() {
+        for c in 0..scene.camera.width() {
+            let color = scope_with( &pool, |scope| {
+                let (tx, rx) = channel();
+                for _ in 0..NB_ITER {
+                    let tx = tx.clone();
+                    scope.execute(move|| {
+                        tx.send(render_pixel(scene, l, c)).expect("channel will be there waiting for the pool");
+                    });
+                }
+                rx.iter().take(NB_ITER).fold(Color{r:0., g:0., b:0.}, |a, b| a+b)
+            });
+
+            data.push(color.r);
+            data.push(color.g);
+            data.push(color.b);
+        }
+    }
+
+    normalize(data)
+}
 
 pub fn render(scene: &Scene) -> Vec<f64> {
     let mut data: Vec<f64> =
@@ -24,6 +79,7 @@ pub fn render(scene: &Scene) -> Vec<f64> {
             for _ in 0..NB_ITER {
                 color = color + render_pixel(scene, l, c);
             }
+
             data.push(color.r);
             data.push(color.g);
             data.push(color.b);
