@@ -54,9 +54,9 @@ impl Camera {
         }
     }
 
-    pub fn ray(&self, px: (u32, u32)) -> Ray {
-        let dx = (px.0 as f64) - (self.resolution.0 as f64) / 2.0;
-        let dy = (px.1 as f64) - (self.resolution.1 as f64) / 2.0;
+    pub fn ray(&self, px: (f64, f64)) -> Ray {
+        let dx = px.0 - (self.resolution.0 as f64) / 2.0;
+        let dy = px.1 - (self.resolution.1 as f64) / 2.0;
 
         let px_window = self.dir + (dy * self.px_down) + (dx * self.px_left);
 

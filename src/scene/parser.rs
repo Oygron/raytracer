@@ -205,6 +205,8 @@ fn read_material(reader: &mut Reader<&[u8]>) -> Material {
     let mut diffuse: Option<Color> = None;
     let mut specular: Option<Color> = None;
     let mut reflectivity = 0.;
+    let mut roughness = 0.;
+
     loop {
         match reader.read_event_into(&mut buf) {
             Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
@@ -213,6 +215,7 @@ fn read_material(reader: &mut Reader<&[u8]>) -> Material {
                 b"diffuse" => diffuse = Some(read_color(e)),
                 b"specular" => specular = Some(read_color(e)),
                 b"reflectivity" => reflectivity = read_property::<f64>(&e, b"r").unwrap(),
+                b"roughness" => roughness = read_property::<f64>(&e, b"r").unwrap(),
                 _ => (),
             },
             Ok(Event::Start(e)) => panic!("unexpected block begin named {:?}", e.name().as_ref()),
@@ -228,6 +231,7 @@ fn read_material(reader: &mut Reader<&[u8]>) -> Material {
         diffuse: diffuse.unwrap(),
         specular: specular.unwrap(),
         reflectivity,
+        roughness,
     }
 }
 

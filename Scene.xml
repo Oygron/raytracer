@@ -6,56 +6,65 @@
 		<dir x="1" y="0" z="-0.1"/>
 	</camera>
 
-	<point_light>
-		<pos x="2" y="0" z="2.5"/>
-		<color r="1" g="1" b="1"/>
+	<point_light name="key_light">
+		<pos x="2" y="-1" z="2.5"/>
+		<color r="1.2" g="1" b="1"/>
 		<intensity i="1"/>
 	</point_light>
 
-	<point_light>
-		<pos x="2" y="5" z="1.5"/>
-		<color r="0.3" g="0" b="0"/>
+	<point_light name="fill_light">
+		<pos x="3" y="3" z="2.5"/>
+		<color r="1" g="1" b="1"/>
+		<intensity i="0.3"/>
+	</point_light>
+
+	<point_light name="back_light">
+		<pos x="10" y="2" z="1.5"/>
+		<color r="0.5" g="0" b="0"/>
 		<intensity i="1"/>
 	</point_light>
 
 	<ambiant_light>
 		<color r="0.8" g="0.8" b="1"/>
-		<intensity i="0.3"/>
+		<intensity i="0.1"/>
 	</ambiant_light>
 
 	<sphere>
-		<pos x="5" y="0" z="1.8"/>
+		<pos x="5" y="0" z="1.5"/>
 		<radius r="1.5"/>
 		<material>
-			<diffuse r="0.01" g="0.5" b="0.01"/>
+			<diffuse r="0.3" g="0.9" b="0.3"/>
 			<specular r="1" g="1" b="1"/>
-			<reflectivity r="0.5"/>
+			<reflectivity r="0.1"/>
+			<roughness r="0.5"/>
 		</material>
 	</sphere>
 	<sphere>
-		<pos x="7" y="3" z="0.9"/>
+		<pos x="7" y="3" z="1.3"/>
 		<radius r="1.3"/>
 		<material>
-			<diffuse r="0.5" g="0.5" b="0.01"/>
-			<specular r="1" g="1" b="1"/>
-			<reflectivity r="0.5"/>
+			<diffuse r="1" g="0.9" b="0.01"/>
+			<specular r="1" g="0.9" b="0.01"/>
+			<reflectivity r="0.8"/>
+			<roughness r="0.03"/>
 		</material>
 	</sphere>
 	<object>
 		<face>
 			<pos x="-10" y="-10" z="0"/>
-			<pos x=" 10" y=" 10" z="0"/>
 			<pos x="-10" y=" 10" z="0"/>
+			<pos x=" 20" y="-10" z="0"/>
 		</face>
 		<face>
-			<pos x=" 10" y="-10" z="0"/>
+			<pos x=" 20" y="-10" z="0"/>
 			<pos x="-10" y=" 10" z="0"/>
-			<pos x=" 10" y=" 10" z="0"/>
+			<pos x=" 20" y=" 10" z="0"/>
 		</face>
 		<material>
 			<diffuse r="1" g="1" b="0.8"/>
 			<specular r="1" g="1" b="1"/>
 			<reflectivity r="0.3"/>
+			<roughness r="0.1"/>
 		</material>
 	</object>
 </scene>

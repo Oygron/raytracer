@@ -14,7 +14,7 @@ mod object;
 mod parser;
 mod renderer;
 
-pub const MAX_BOUNCES:u16 = 10;
+pub const MAX_BOUNCES:u16 = 3;
 
 pub struct Scene {
     pub camera: Camera,

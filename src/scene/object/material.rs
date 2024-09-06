@@ -16,6 +16,7 @@ pub struct Material {
     pub diffuse: Color,
     pub specular: Color,
     pub reflectivity: f64,
+    pub roughness: f64,
 }
 
 impl Material {
@@ -31,10 +32,12 @@ impl Material {
             b: 0.,
         };
         let reflectivity = 0.;
+        let roughness = 0.;
         Material {
             diffuse: base,
             specular,
             reflectivity,
+            roughness,
         }
     }
 }
