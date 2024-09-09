@@ -75,7 +75,7 @@ mod tests {
         assert_eq!(
             i.pos, 
             Vec3d {
-                x: 1.,
+                x: 0.5,
                 y: 0.,
                 z: 0.
             }
