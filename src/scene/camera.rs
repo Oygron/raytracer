@@ -132,7 +132,7 @@ mod tests {
             z: -1.,
         };
         let cam = Camera::new(pos, dir, None, None, None);
-        let ray = cam.ray((40, 60));
+        let ray = cam.ray((40., 60.));
         assert_abs_diff_eq!(
             ray.dir,
             Vec3d {

@@ -114,7 +114,7 @@ mod tests {
                 z: 0.,
             },
         };
-        let i = face.intersect(ray).unwrap();
+        let i = face.intersect(&ray).unwrap();
         assert_eq!(i.dist, 1.0);
         assert_eq!(
             i.pos,
@@ -141,7 +141,7 @@ mod tests {
                 z:  0.,
             },
         };
-        assert_eq!(face.intersect(ray), None);
+        assert_eq!(face.intersect(&ray), None);
     }
 
     #[test]
@@ -159,7 +159,7 @@ mod tests {
                 z: 1.,
             },
         };
-        assert_eq!(face.intersect(ray), None);
+        assert_eq!(face.intersect(&ray), None);
     }
 
     #[test]
@@ -177,7 +177,7 @@ mod tests {
                 z: 0.,
             },
         };
-        assert_eq!(face.intersect(ray), None);
+        assert_eq!(face.intersect(&ray), None);
     }
 
     #[test]
@@ -195,6 +195,6 @@ mod tests {
                 z: 0.,
             },
         };
-        assert_eq!(face.intersect(ray), None);
+        assert_eq!(face.intersect(&ray), None);
     }
 }
