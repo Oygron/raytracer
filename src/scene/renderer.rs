@@ -43,7 +43,7 @@ pub fn render_rayon(scene: &Scene) -> Vec<f64> {
     normalize(data)
 }
 
-pub fn render_multitrhead(scene: &Scene) -> Vec<f64> {
+pub fn render_multithread(scene: &Scene) -> Vec<f64> {
     let pool = ThreadPool::new(NB_WORKERS);
 
     let mut data: Vec<f64> =

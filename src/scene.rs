@@ -23,6 +23,14 @@ pub struct Scene {
     pub objects: Vec<Object>,
 }
 
+#[derive(clap::ValueEnum, Clone, Default, Debug)]
+pub enum Parallel {
+    #[default]
+    No,
+    Basic,
+    Rayon,
+}
+
 impl Scene {
     pub fn load(filename: String) -> Scene {
         let file_content = fs::read_to_string(&filename).expect(&format!(
@@ -33,11 +41,11 @@ impl Scene {
         parser::load_from_xml_string(file_content)
     }
 
-    fn to_png(&self, data: Vec<f64>) {
+    fn to_png(&self, data: Vec<f64>, output:String) {
         //-> [0..255]
         let data: Vec<u8> = data.iter().map(|v| (*v * 255.) as u8).collect();
 
-        let path = Path::new(r"image.png");
+        let path = Path::new(&output);
         let file = File::create(path).unwrap();
         let w = &mut BufWriter::new(file);
 
@@ -50,10 +58,13 @@ impl Scene {
         writer.write_image_data(&data).unwrap(); // Save
     }
 
-    pub fn render(&self) {
-        //let data: Vec<f64> = renderer::render(self);
-        //let data: Vec<f64> = renderer::render_multitrhead(self);
-        let data: Vec<f64> = renderer::render_rayon(self);
-        self.to_png(data);
+    pub fn render(&self, parallel: Parallel, output:String) {
+        let data: Vec<f64> = 
+            match parallel {
+                Parallel::No => renderer::render(self),
+                Parallel::Basic => renderer::render_multithread(self),
+                Parallel::Rayon => renderer::render_rayon(self),
+            };
+        self.to_png(data, output);
     }
 }
