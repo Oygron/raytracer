@@ -131,12 +131,12 @@ mod tests {
         let face = create_face();
         let ray = Ray {
             start: Vec3d {
-                x: 0.,
+                x: 2.,
                 y: 0.,
                 z: 0.,
             },
             dir: Vec3d {
-                x: -1.,
+                x:  1.,
                 y:  0.,
                 z:  0.,
             },

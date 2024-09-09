@@ -1,5 +1,7 @@
 Generates an image from a scene with a raytracing algorithm
 
+![Result example](result_example.png)
+
 Usage: raytracer [OPTIONS]
 
 Options:
