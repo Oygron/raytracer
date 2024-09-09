@@ -61,9 +61,9 @@ impl Scene {
     pub fn render(&self, parallel: Parallel, output:String) {
         let data: Vec<f64> = 
             match parallel {
-                Parallel::No => renderer::render(self),
-                Parallel::Basic => renderer::render_multithread(self),
-                Parallel::Rayon => renderer::render_rayon(self),
+                Parallel::No => self.render_monothread(),
+                Parallel::Basic => self.render_multithread(),
+                Parallel::Rayon => self.render_rayon(),
             };
         self.to_png(data, output);
     }

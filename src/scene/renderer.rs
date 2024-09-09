@@ -10,7 +10,8 @@ use super::camera::Ray;
 use super::light::LightType;
 use super::object::material::Color;
 use super::object::{Intersect, Object};
-use super::{Scene, MAX_BOUNCES};
+use super::Scene;
+use super::MAX_BOUNCES;
 
 #[cfg(debug_assertions)]
 const NB_ITER: usize = 2;
@@ -20,74 +21,92 @@ const NB_ITER: usize = 100;
 
 const NB_WORKERS: usize = 4;
 
-pub fn render_rayon(scene: &Scene) -> Vec<f64> {
-
-    let mut data: Vec<f64> =
-        Vec::with_capacity(3 * scene.camera.height() as usize * scene.camera.width() as usize);
-    
-    for l in 0..scene.camera.height() {
-        for c in 0..scene.camera.width() {
-            let color = 
-                (0..NB_ITER)
-                .into_par_iter()
-                .map(|_| render_pixel(scene, l, c))
-                .reduce(|| Color{r:0., g:0., b:0.}, 
-                |a, b| a + b);
-
-            data.push(color.r);
-            data.push(color.g);
-            data.push(color.b);
-        }
+impl Scene{
+    pub fn toto(&self) -> u64 {
+        0
     }
 
-    normalize(data)
-}
+    pub fn render_rayon(&self) -> Vec<f64> {
 
-pub fn render_multithread(scene: &Scene) -> Vec<f64> {
-    let pool = ThreadPool::new(NB_WORKERS);
+        let mut data: Vec<f64> =
+            Vec::with_capacity(3 * self.camera.height() as usize * self.camera.width() as usize);
+        
+        for l in 0..self.camera.height() {
+            for c in 0..self.camera.width() {
+                let color = 
+                    (0..NB_ITER)
+                    .into_par_iter()
+                    .map(|_| self.render_pixel(l, c))
+                    .reduce(|| Color{r:0., g:0., b:0.}, 
+                    |a, b| a + b);
 
-    let mut data: Vec<f64> =
-        Vec::with_capacity(3 * scene.camera.height() as usize * scene.camera.width() as usize);
-    for l in 0..scene.camera.height() {
-        for c in 0..scene.camera.width() {
-            let color = scope_with( &pool, |scope| {
-                let (tx, rx) = channel();
-                for _ in 0..NB_ITER {
-                    let tx = tx.clone();
-                    scope.execute(move|| {
-                        tx.send(render_pixel(scene, l, c)).expect("channel will be there waiting for the pool");
-                    });
-                }
-                rx.iter().take(NB_ITER).fold(Color{r:0., g:0., b:0.}, |a, b| a+b)
-            });
-
-            data.push(color.r);
-            data.push(color.g);
-            data.push(color.b);
-        }
-    }
-
-    normalize(data)
-}
-
-pub fn render(scene: &Scene) -> Vec<f64> {
-    let mut data: Vec<f64> =
-        Vec::with_capacity(3 * scene.camera.height() as usize * scene.camera.width() as usize);
-    for l in 0..scene.camera.height() {
-        for c in 0..scene.camera.width() {
-            let mut color = Color{r:0., g:0., b:0.};
-            for _ in 0..NB_ITER {
-                color = color + render_pixel(scene, l, c);
+                data.push(color.r);
+                data.push(color.g);
+                data.push(color.b);
             }
-
-            data.push(color.r);
-            data.push(color.g);
-            data.push(color.b);
         }
+
+        normalize(data)
     }
 
-    normalize(data)
+    pub fn render_multithread(&self) -> Vec<f64> {
+        let pool = ThreadPool::new(NB_WORKERS);
+    
+        let mut data: Vec<f64> =
+            Vec::with_capacity(3 * self.camera.height() as usize * self.camera.width() as usize);
+        for l in 0..self.camera.height() {
+            for c in 0..self.camera.width() {
+                let color = scope_with( &pool, |scope| {
+                    let (tx, rx) = channel();
+                    for _ in 0..NB_ITER {
+                        let tx = tx.clone();
+                        scope.execute(move|| {
+                            tx.send(self.render_pixel(l, c)).expect("channel will be there waiting for the pool");
+                        });
+                    }
+                    rx.iter().take(NB_ITER).fold(Color{r:0., g:0., b:0.}, |a, b| a+b)
+                });
+    
+                data.push(color.r);
+                data.push(color.g);
+                data.push(color.b);
+            }
+        }
+    
+        normalize(data)
+    }
+    
+    pub fn render_monothread(&self) -> Vec<f64> {
+        let mut data: Vec<f64> =
+            Vec::with_capacity(3 * self.camera.height() as usize * self.camera.width() as usize);
+        for l in 0..self.camera.height() {
+            for c in 0..self.camera.width() {
+                let mut color = Color{r:0., g:0., b:0.};
+                for _ in 0..NB_ITER {
+                    color = color + self.render_pixel(l, c);
+                }
+    
+                data.push(color.r);
+                data.push(color.g);
+                data.push(color.b);
+            }
+        }
+    
+        normalize(data)
+    }
+
+    fn render_pixel(&self, l: u32, c: u32) -> Color {
+
+        let c = (c as f64) + rand::random::<f64>() - 0.5;
+        let l = (l as f64) + rand::random::<f64>() - 0.5;
+    
+        let ray = self.camera.ray((c, l));
+    
+        send_ray(self, ray, MAX_BOUNCES)
+    }
+
 }
+
 
 fn compute_diffuse(scene: &Scene, i: &Intersect) -> Color{
     
@@ -241,15 +260,6 @@ fn send_ray(scene: &Scene, ray: Ray, depth: u16) -> Color {
 
 }
 
-fn render_pixel(scene: &Scene, l: u32, c: u32) -> Color {
-
-    let c = (c as f64) + rand::random::<f64>() - 0.5;
-    let l = (l as f64) + rand::random::<f64>() - 0.5;
-
-    let ray = scene.camera.ray((c, l));
-
-    send_ray(scene, ray, MAX_BOUNCES)
-}
 
 fn normalize(data: Vec<f64>) -> Vec<f64> {
     let max_intensity = data.iter().cloned().fold(f64::NAN, f64::max);
@@ -259,12 +269,67 @@ fn normalize(data: Vec<f64>) -> Vec<f64> {
 #[cfg(test)]
 mod tests {
 
+
     use super::*;
 
     #[test]
     fn test_normalize() {
-        //Should not crash
         let vec = vec![0., 2., 1.];
         assert_eq!(normalize(vec), vec![0., 1., 0.5]);
+    }
+
+    //#[cfg_attr(test, automock)]
+    //impl Scene {
+
+
+    use crate::scene::{camera::Camera, light::Light};
+
+    fn create_scene() -> Scene{
+        let camera = Camera::new(
+            Vec3d{x:0., y:0., z:0.},
+            Vec3d{x:1., y:0., z:0.},
+            None, 
+            Some((1,1)), 
+            None
+        );
+        let ambiant_light = Light{
+            color: Color{r:1., g:0., b:0.},
+            intensity: 1.,
+            light_type: LightType::AmbiantLight,
+        };
+        Scene { 
+            camera: camera, 
+            ambiant_light: ambiant_light, 
+            lights: vec![], 
+            objects: vec![],
+        }
+    }
+    //}
+
+    #[test]
+    fn test_monothread(){
+        let scene = create_scene();
+        let colors = scene.render_monothread();
+        assert_eq!(colors[0], 1.);
+        assert_eq!(colors[1], 0.);
+        assert_eq!(colors[2], 0.);
+    }
+
+    #[test]
+    fn test_multithread(){
+        let scene = create_scene();
+        let colors = scene.render_multithread();
+        assert_eq!(colors[0], 1.);
+        assert_eq!(colors[1], 0.);
+        assert_eq!(colors[2], 0.);
+    }
+
+    #[test]
+    fn test_rayon(){
+        let scene = create_scene();
+        let colors = scene.render_rayon();
+        assert_eq!(colors[0], 1.);
+        assert_eq!(colors[1], 0.);
+        assert_eq!(colors[2], 0.);
     }
 }
